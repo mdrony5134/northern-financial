@@ -119,6 +119,22 @@
         }
       }
     </style>
+    <!-- EmailJS CDN -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+    ></script>
+    <script type="text/javascript">
+      const EMAILJS_PUBLIC_KEY = "HsKyWv3m_rvDlLVGE";
+      const EMAILJS_TEMPLATE_ID = "template_hempyai";
+      const EMAILJS_SERVICE_ID = "service_emyrr5p";
+
+      window.addEventListener("DOMContentLoaded", function () {
+        if (window.emailjs) {
+          window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+        }
+      });
+    </script>
     <style>
       [data-reveal],
       [data-reveal-group] > * {
@@ -365,33 +381,56 @@
             <!-- Contact Form -->
             <div class="border border-border p-10 bg-limestone-dark">
               <h3 class="mb-6">Send Us a Message</h3>
-              <form onsubmit="handleSubmit(event)" class="space-y-4">
+              <form
+                id="contactForm"
+                onsubmit="handleSubmit(event)"
+                class="space-y-4"
+              >
+                <input type="hidden" name="title" value="Website Inquiry" />
                 <input
                   type="text"
+                  name="name"
                   placeholder="Your Name"
                   required
                   class="form-input"
                 />
                 <input
                   type="email"
+                  name="email"
                   placeholder="Email Address"
                   required
                   class="form-input"
                 />
                 <input
                   type="tel"
+                  name="phone"
                   placeholder="Phone Number"
                   class="form-input"
                 />
                 <textarea
+                  name="message"
                   placeholder="How can we help?"
                   rows="4"
                   class="form-input resize-none"
+                  required
                 ></textarea>
-                <button type="submit" class="btn-gold w-full">
+                <button type="submit" class="btn-gold w-full" id="submitBtn">
                   Send Message
                 </button>
               </form>
+              <div
+                id="successMessage"
+                class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-green-800"
+              >
+                Thank you! Your message has been sent successfully. We'll be in
+                touch soon.
+              </div>
+              <div
+                id="errorMessage"
+                class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded text-red-800"
+              >
+                There was an error sending your message. Please try again.
+              </div>
             </div>
           </div>
         </div>
@@ -554,10 +593,54 @@
         document.getElementById("icon-open").classList.toggle("hidden");
         document.getElementById("icon-close").classList.toggle("hidden");
       }
+
       function handleSubmit(e) {
         e.preventDefault();
-        alert("Thank you! We will be in touch.");
-        e.target.reset();
+        const submitBtn = document.getElementById("submitBtn");
+        const successMessage = document.getElementById("successMessage");
+        const errorMessage = document.getElementById("errorMessage");
+        const form = document.getElementById("contactForm");
+
+        if (!window.emailjs) {
+          errorMessage.textContent =
+            "Email service is not available right now. Please refresh and try again.";
+          errorMessage.classList.remove("hidden");
+          return;
+        }
+
+        // Hide messages
+        successMessage.classList.add("hidden");
+        errorMessage.classList.add("hidden");
+
+        // Disable button and show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending...";
+
+        // Send email via EmailJS
+        window.emailjs
+          .sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form)
+          .then(
+            function (response) {
+              console.log("SUCCESS!", response.status, response.text);
+              successMessage.classList.remove("hidden");
+              form.reset();
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Send Message";
+            },
+            function (error) {
+              console.log("FAILED...", error);
+              const reason =
+                (error && (error.text || error.message || error.status)) ||
+                "Unknown error";
+              errorMessage.textContent =
+                "Message send failed. " +
+                reason +
+                ". Please check EmailJS template setup.";
+              errorMessage.classList.remove("hidden");
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Send Message";
+            },
+          );
       }
 
       initRevealAnimations();
